@@ -1,12 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder } from '@angular/forms';
-
-import * as Mnemonic from "bitcore-mnemonic";
-import * as CryptoJS from "crypto-js";
-import { hdkey } from "ethereumjs-wallet";
-import * as bip39 from "bip39";
-import * as util from "ethereumjs-util";
-import Web3 from 'web3';
+import { AbstractControl, FormBuilder, FormControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import { combineLatest, distinctUntilChanged, withLatestFrom } from 'rxjs';
+import { Web3Service } from '../web3.service';
 
 @Component({
   selector: 'app-login',
@@ -15,124 +10,83 @@ import Web3 from 'web3';
 })
 export class LoginComponent implements OnInit {
 
-  loginForm = this.formBuilder.group({
-    seeds: '',
-    password: ''
-  });;
   sendForm = this.formBuilder.group({
     to: '',
     amount: ''
-  });;
-  encryptedSeeds: any;
-  wallet!: {
-    address: string;
-    balance: string;
-  };
-  provider = new Web3.providers.HttpProvider('http://127.0.0.1:8545');
-  web3 = new Web3();
+  });
+  loginForm: any;
   window: any;
   mining = false;
   lastTransaction: any;
+  wallet!: {
+    address?: string;
+    balance?: string;
+  };
+  hasSeeds = false;
 
-  constructor(private formBuilder: FormBuilder) {
+  constructor(private formBuilder: FormBuilder, private web3Service: Web3Service) {
     this.window = document.defaultView;
-    this.web3.setProvider(this.provider);
-  }
 
-  async ngOnInit() {
-    this.encryptedSeeds = window.localStorage.getItem('seeds');
-
-    const network = await this.web3.eth.net.getNetworkType();
-    // await window.ethereum.enable();
-    const accounts = await this.web3.eth.getAccounts();
-    // setAccount(accounts[0]);
-    console.log(`Web3 version ${Web3.version}`);
-    console.log(`Network ${network}`);
-    console.log(`Accounts`, accounts);
-
-    const mnemonic = new Mnemonic("test test test test test test test test test test test junk");
-    const seed = await bip39.mnemonicToSeed(mnemonic.toString());
-    const path = "m/44'/60'/0'/0/0";
-    const wallet = hdkey
-      .fromMasterSeed(seed)
-      .derivePath(`${path}/${2}`)
-      .getWallet();
-
-    for (let i = 0; i < 10; i++) {
-      const wallet = hdkey
-        .fromMasterSeed(seed)
-        .derivePath(`${path}/${i}`)
-        .getWallet();
-      console.log(`Account #${i}: ${wallet.getAddressString()}`);
-      console.log(`Private Key: ${wallet.getPrivateKeyString()}`);
-    }
-
-    const privateKey = wallet.getPrivateKey();
-    const publicKey = util.privateToPublic(privateKey);
-    const address = `0x${util.pubToAddress(publicKey).toString('hex')}`;
-    console.log(mnemonic)
-    console.log(seed)
-    console.log(`Address: ${wallet.getAddressString()}`);
-    console.log(`Private Key: ${wallet.getPrivateKeyString()}`);
-
-    // const account = accounts.find(val => val.toLowerCase() == "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266")
-    // console.log(account)
-    await this.getBalance(address as string);
-  }
-
-  async getBalance(address: string) {
-    const balance = await this.web3.eth.getBalance(address);
-    console.log(`${balance} ETH`);
-    return Web3.utils.fromWei(balance, 'ether');
-  }
-
-  sendLogin({ seeds, password }: any) {
-    if (password == '') {
-      return alert('Introduce tu contraseña');
-    }
-
-    if (this.encryptedSeeds) {
-      const decrypt = CryptoJS.AES.decrypt(this.encryptedSeeds, password);
-      seeds = decrypt.toString(CryptoJS.enc.Utf8);
-    }
-
-    if (!Mnemonic.isValid(seeds)) {
-      return alert('Semilla inválida');
-    }
-
-    console.log(`Seeds: ${seeds}`);
-    console.log(`Password: ${password}`);
-
-    const encryptedSeeds = CryptoJS.AES.encrypt(seeds, password).toString();
-
-    console.log(`Encrypted Seeds: ${encryptedSeeds}`);
-
-    window.localStorage.setItem('seeds', encryptedSeeds);
-
-    this.loginForm.reset();
-
-    // this.initWallet(loginData.seed);
-  }
-
-  removeSeeds() {
-    window.localStorage.removeItem('seeds');
-    this.encryptedSeeds = '';
-    this.wallet = {
-      address: '',
-      balance: ''
-    };
-  }
-
-  loginWithMetamask() {
-    if (!this.window.ethereum) {
-      return alert('Metamask no está instalado');
-    }
-
-    this.window.ethereum.enable().then((accounts: any) => {
-      console.log(accounts)
-      let address = accounts[0];
-      this.getBalance(address);
+    this.loginForm = this.formBuilder.group({
+      seeds: new FormControl(null, [Validators.required, forbiddenSeedsValidator(this.web3Service)]),
+      password: new FormControl(null, [Validators.required, Validators.minLength(4)]),
     });
   }
 
+  ngOnInit() {
+    this.web3Service.getInfo();
+    if (this.web3Service.hasSeeds()) {
+      this.hasSeeds = true;
+      // this.loginForm.get('seeds').clearValidators();
+      this.password.valueChanges
+        .pipe(
+          withLatestFrom(this.password.statusChanges),
+        ).subscribe(() => {
+          if (this.password.valid) {
+            console.log('SUCESS');
+            console.log(this.password.value);
+            const seeds = this.web3Service.decryptSeeds(this.password.value);
+            console.log(seeds)
+            this.loginForm.controls.seeds.setValue(seeds);
+            this.loginForm.controls.seeds.markAsDirty();
+          }
+        });
+    }
+  }
+
+  async sendLogin() {
+    // if(this.hasSeeds){
+    //   console.log("decryptSeeds");
+
+    // }
+    // debugger
+    this.wallet = await this.web3Service.login(this.loginForm.value);
+  }
+
+  logout() {
+    this.web3Service.removeSeeds();
+    this.wallet = {};
+    this.hasSeeds = false;
+    this.loginForm.reset();
+  }
+
+  async loginMetamask() {
+    if (!(this.window as any).ethereum) {
+      return alert('Metamask no está instalado');
+    }
+    this.wallet = await this.web3Service.loginMetamask(this.window);
+  }
+
+  get seeds() { return this.loginForm.get('seeds'); }
+
+  get password() { return this.loginForm.get('password'); }
+
+}
+
+
+function forbiddenSeedsValidator(web3Service: Web3Service): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const forbidden = !web3Service.isValidSeeds(control.value);
+    return forbidden ? { forbiddenSeeds: { value: control.value } } : null;
+  };
 }

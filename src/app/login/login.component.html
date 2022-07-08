@@ -1,56 +1,71 @@
-<form
-  *ngIf="!wallet?.address"
-  [formGroup]="loginForm"
-  (ngSubmit)="sendLogin(loginForm.value)"
->
-  <div *ngIf="!encryptedSeeds">
-    <textarea formControlName="seeds" rows="4" placeholder="Seeds"></textarea>
+<form *ngIf="!wallet?.address" [formGroup]="loginForm">
+  <textarea
+    *ngIf="!hasSeeds"
+    type="text"
+    class="form-control"
+    formControlName="seeds"
+    placeholder="Seeds"
+    rows="4"
+  ></textarea>
+
+  <input
+    type="password"
+    id="password"
+    class="form-control"
+    formControlName="password"
+    placeholder="Password"
+  />
+
+  <div
+    *ngIf="seeds.invalid && (seeds.dirty || seeds.touched)"
+    class="alert alert-danger"
+  >
+    <div *ngIf="seeds.errors?.['forbiddenSeeds']">Seeds are not valid.</div>
   </div>
-  <div>
-    <input formControlName="password" type="password" placeholder="Password" />
+
+  <div
+    *ngIf="password.invalid && (password.dirty || password.touched)"
+    class="alert alert-danger"
+  >
+    <div *ngIf="password.errors?.['required']">Password is required.</div>
+    <div *ngIf="password.errors?.['minlength']">
+      Password must be at least 4 characters long.
+    </div>
   </div>
-  <button type="submit">Login</button>
-  <button type="button" (click)="removeSeeds()" *ngIf="encryptedSeeds">
-    Clear Seeds
+
+  <button
+    [disabled]="!loginForm.valid"
+    class="btn"
+    type="submit"
+    (click)="sendLogin()"
+  >
+    Login
   </button>
-  <button type="button" (click)="loginWithMetamask()">
-    Login With Metamask
+  <button
+    [disabled]="!window.ethereum"
+    class="btn"
+    type="button"
+    (click)="loginMetamask()"
+  >
+    Connect to Metamask
+    <img
+      class=""
+      src="../../assets/images/metamask-icon.svg"
+      alt="Metamask"
+    />
   </button>
 </form>
 
 <div *ngIf="wallet?.address">
   <h1>Hello {{ wallet?.address }}</h1>
-  <p>Tu saldo en ETH es: {{ wallet?.balance }}ETH</p>
-  <p>
-    <a
-      href="https://ropsten.etherscan.io/address/{{ wallet?.address }}"
-      target="_blank"
-      >Ver tu cuenta en Etherscan</a
-    >
-  </p>
-
-  <h2>Send Ethers</h2>
-  <form [formGroup]="sendForm">
-    <div>
-      <input formControlName="to" type="text" placeholder="To" />
-    </div>
-    <div>
-      <input formControlName="amount" type="number" placeholder="Amount" />
-    </div>
-    <button type="submit" *ngIf="!mining">Send</button>
-    <button type="button" *ngIf="mining" disabled>Mining…</button>
-  </form>
-
-  <div *ngIf="lastTransaction">
-    <h2>Last Transaction</h2>
-    <p>
-      <a
-        href="https://ropsten.etherscan.io/tx/{{
-          lastTransaction.transactionHash
-        }}"
-        target="_blank"
-        >View Last Transaction on Etherscan</a
-      >
-    </p>
-  </div>
+  <p>Your balance in ETH is: {{ wallet?.balance }}ETH</p>
 </div>
+
+<button
+  *ngIf="wallet?.address || hasSeeds"
+  class="btn btn--logout"
+  type="button"
+  (click)="logout()"
+>
+  Logout
+</button>

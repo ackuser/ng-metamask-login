@@ -26,6 +26,7 @@
     "ethereumjs-tx": "^2.1.2",
     "ethereumjs-util": "^7.1.5",
     "ethereumjs-wallet": "^1.0.2",
+    "font-awesome": "^4.7.0",
     "https-browserify": "^1.0.0",
     "os-browserify": "^0.3.0",
     "rxjs": "~7.5.0",

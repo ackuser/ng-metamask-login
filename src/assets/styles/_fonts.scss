@@ -1,0 +1,47 @@
+@font-face {
+    font-family: 'TitilliumWeb-Light';
+    src: url('../fonts/TitilliumWeb-Light.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'TitilliumWeb-Regular';
+    src: url('../fonts/TitilliumWeb-Regular.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'TitilliumWeb-Bold';
+    src: url('../fonts/TitilliumWeb-Bold.ttf') format('truetype');
+}
+
+@mixin font($fontFamily, $fontSize, $lineHeight) {
+    font-family: $fontFamily;
+    font-size: $fontSize;
+    line-height: $lineHeight;
+}
+
+.font {
+
+    &-title {
+        @include font(TitilliumWeb-Bold, 24px, 38px);
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    &-body {
+        @include font(TitilliumWeb-Regular, 18px, 25px);
+        text-align: center;
+    }
+
+    &-h1 {
+        @include font(TitilliumWeb-Bold, 20px, 103px);
+    }
+
+    &-btn {
+        @include font(TitilliumWeb-Bold, 14px, 28px);
+    }
+
+    &-form {
+        @include font(TitilliumWeb-Light, 14px, 28px);
+    }
+
+}

@@ -1,4 +1,5 @@
 @import '_fonts';
+@import '_colors';
 
 :host {
     display: flex;
@@ -13,6 +14,6 @@
 
     .title {
         @extend .font-title;
-        color: #6D95F9;
+        color: $primary;
     }
 }

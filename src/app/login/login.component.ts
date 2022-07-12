@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
-import { combineLatest, distinctUntilChanged, withLatestFrom } from 'rxjs';
+import { withLatestFrom } from 'rxjs';
 import { Web3Service } from '../web3.service';
 
 @Component({
@@ -10,10 +10,6 @@ import { Web3Service } from '../web3.service';
 })
 export class LoginComponent implements OnInit {
 
-  sendForm = this.formBuilder.group({
-    to: '',
-    amount: ''
-  });
   loginForm: any;
   window: any;
   mining = false;
@@ -74,7 +70,7 @@ export class LoginComponent implements OnInit {
     if (!(this.window as any).ethereum) {
       return alert('Metamask no está instalado');
     }
-    this.wallet = await this.web3Service.loginMetamask(this.window);
+    this.wallet = await this.web3Service.loginMetamask();
   }
 
   get seeds() { return this.loginForm.get('seeds'); }

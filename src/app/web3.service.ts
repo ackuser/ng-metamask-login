@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { hdkey } from "ethereumjs-wallet";
 import * as bip39 from "bip39";
-import * as util from "ethereumjs-util";
 import Web3 from 'web3'
 import * as Mnemonic from "bitcore-mnemonic";
 import * as CryptoJS from "crypto-js";
@@ -35,6 +34,18 @@ export class Web3Service {
     const balance = await this.web3.eth.getBalance(address);
     console.log(`${balance} ETH`);
     return Web3.utils.fromWei(balance, 'ether');
+  }
+
+  hasSeeds() {
+    return window.localStorage.getItem('seeds') != null;
+  }
+
+  isValidSeeds(seeds: string) {
+    return seeds && Mnemonic.isValid(seeds);
+  }
+
+  removeSeeds() {
+    window.localStorage.removeItem('seeds');
   }
 
   encryptSeeds(seeds: string, password: string) {
@@ -78,24 +89,12 @@ export class Web3Service {
     return { ...this.wallet, ...payload };
   }
 
-  hasSeeds() {
-    return window.localStorage.getItem('seeds') != null;
+  isMetamaskInstalled() {
+    return this.window.ethereum;
   }
-
-  isValidSeeds(seeds: string) {
-    return seeds && Mnemonic.isValid(seeds);
-  }
-
-  removeSeeds() {
-    window.localStorage.removeItem('seeds');
-  }
-
-  isMetamaskInstalled(window: any) {
-    return window.ethereum;
-  }
-
-  async loginMetamask(window: any) {
-    const accounts = await window.ethereum.enable();
+  
+  async loginMetamask() {
+    const accounts = await this.window.ethereum.enable();
     const address = accounts[0];
     const balance = await this.getBalance(address);
     const payload = {

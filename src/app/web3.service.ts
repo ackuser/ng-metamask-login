@@ -4,6 +4,7 @@ import * as bip39 from "bip39";
 import Web3 from 'web3'
 import * as Mnemonic from "bitcore-mnemonic";
 import * as CryptoJS from "crypto-js";
+import { of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +18,6 @@ export class Web3Service {
   path = "m/44'/60'/0'/0";
 
   constructor() {
-    this.window = document.defaultView;
     this.web3.setProvider(this.provider);
   }
 
@@ -90,17 +90,28 @@ export class Web3Service {
   }
 
   isMetamaskInstalled() {
-    return this.window.ethereum;
+    return of((window as any).ethereum)
   }
-  
+
   async loginMetamask() {
-    const accounts = await this.window.ethereum.enable();
-    const address = accounts[0];
-    const balance = await this.getBalance(address);
-    const payload = {
-      address,
-      balance
+    const eth = (window as any).ethereum;
+    try {
+      const accounts = await eth.request({ method: 'eth_requestAccounts' })
+      console.log(accounts[0])
+      const address = accounts[0];
+      console.log(address)
+      const balance = await this.getBalance(address);
+      const payload = {
+        address,
+        balance
+      }
+      return { ...this.wallet, ...payload };
+    } catch (error) {
+      if ((error as any).code == -32002) {
+        alert('Please connect to MetaMask.');
+      } else {
+        console.error(error);
+      }
     }
-    return { ...this.wallet, ...payload };
   }
 }

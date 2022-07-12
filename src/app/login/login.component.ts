@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
-import { withLatestFrom } from 'rxjs';
+import { Observable, withLatestFrom } from 'rxjs';
 import { Web3Service } from '../web3.service';
 
 @Component({
@@ -11,18 +11,13 @@ import { Web3Service } from '../web3.service';
 export class LoginComponent implements OnInit {
 
   loginForm: any;
-  window: any;
   mining = false;
   lastTransaction: any;
-  wallet!: {
-    address?: string;
-    balance?: string;
-  };
+  wallet: any;
   hasSeeds = false;
+  isMetamaskEnabled$!: Observable<boolean>;
 
   constructor(private formBuilder: FormBuilder, private web3Service: Web3Service) {
-    this.window = document.defaultView;
-
     this.loginForm = this.formBuilder.group({
       seeds: new FormControl(null, [Validators.required, forbiddenSeedsValidator(this.web3Service)]),
       password: new FormControl(null, [Validators.required, Validators.minLength(4)]),
@@ -31,6 +26,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     this.web3Service.getInfo();
+    this.isMetamaskEnabled$ = this.web3Service.isMetamaskInstalled();
     if (this.web3Service.hasSeeds()) {
       this.hasSeeds = true;
       // this.loginForm.get('seeds').clearValidators();
@@ -51,11 +47,6 @@ export class LoginComponent implements OnInit {
   }
 
   async sendLogin() {
-    // if(this.hasSeeds){
-    //   console.log("decryptSeeds");
-
-    // }
-    // debugger
     this.wallet = await this.web3Service.login(this.loginForm.value);
   }
 
@@ -67,10 +58,7 @@ export class LoginComponent implements OnInit {
   }
 
   async loginMetamask() {
-    if (!(this.window as any).ethereum) {
-      return alert('Metamask no está instalado');
-    }
-    this.wallet = await this.web3Service.loginMetamask();
+    this.wallet = await this.web3Service.loginMetamask()
   }
 
   get seeds() { return this.loginForm.get('seeds'); }

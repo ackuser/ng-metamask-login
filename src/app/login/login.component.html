@@ -42,23 +42,19 @@
     Login
   </button>
   <button
-    [disabled]="!window.ethereum"
+    [disabled]="!(isMetamaskEnabled$ | async)"
     class="btn"
     type="button"
     (click)="loginMetamask()"
-  > 
+  >
     Connect to Metamask
-    <img
-      class=""
-      src="../../assets/images/metamask-icon.svg"
-      alt="Metamask"
-    />
+    <img class="" src="../../assets/images/metamask-icon.svg" alt="Metamask" />
   </button>
 </form>
 
 <div *ngIf="wallet?.address">
-  <h1>Hi, {{ wallet?.address }}</h1>
-  <p>Your balance is: {{ wallet?.balance }} ETH</p>
+  <h1>Hello {{ wallet?.address }}</h1>
+  <p>Your balance in ETH is: {{ wallet?.balance }}ETH</p>
 </div>
 
 <button

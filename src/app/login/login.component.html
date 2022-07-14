@@ -1,3 +1,4 @@
+<!-- Form Login -->
 <form *ngIf="!wallet?.address" [formGroup]="loginForm">
   <textarea
     *ngIf="!hasSeeds"
@@ -16,6 +17,7 @@
     placeholder="Password"
   />
 
+  <!-- Errors -->
   <div
     *ngIf="seeds.invalid && (seeds.dirty || seeds.touched)"
     class="alert alert-danger"
@@ -33,6 +35,7 @@
     </div>
   </div>
 
+  <!-- Normal Login -->
   <button
     [disabled]="!loginForm.valid"
     class="btn"
@@ -41,6 +44,7 @@
   >
     Login
   </button>
+  <!-- Login with Metamask -->
   <button
     [disabled]="!(isMetamaskEnabled$ | async)"
     class="btn"
@@ -52,11 +56,13 @@
   </button>
 </form>
 
+<!-- Show balance if logged -->
 <div *ngIf="wallet?.address">
   <h1>Hello {{ wallet?.address }}</h1>
   <p>Your balance in ETH is: {{ wallet?.balance }}ETH</p>
 </div>
 
+<!-- Logout if it is logged with Normal Login -->
 <button
   *ngIf="wallet?.address || hasSeeds"
   class="btn btn--logout"

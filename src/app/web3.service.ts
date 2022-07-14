@@ -11,16 +11,29 @@ import { of } from 'rxjs';
 })
 export class Web3Service {
 
+  // Connect with HttpProvider with Hardhat in my case 127.0.0.1:8545
   provider = new Web3.providers.HttpProvider('http://127.0.0.1:8545');
+  // web3 object to interact with our decentralised world
   web3 = new Web3();
+  // window to not to broke anything :P
   window: any;
+  // wallet to save our Ethers!
   wallet: any;
+  // bip39 path
   path = "m/44'/60'/0'/0";
 
+  /**
+   * Creates an instance of web3 service.
+   */
   constructor() {
     this.web3.setProvider(this.provider);
   }
 
+  /**
+   * Gets info
+   * For logging purposes, we trace some info like our web3 version
+   *  what type of network and all the accounts we set up in hardhat
+   */
   async getInfo() {
     const network = await this.web3.eth.net.getNetworkType();
     const accounts = await this.web3.eth.getAccounts();
@@ -29,6 +42,12 @@ export class Web3Service {
     console.log(`Accounts`, accounts);
   }
 
+  /**
+   * Gets balance 
+   * "Show me the money" function allow us to check the balance belonging to an address. Take care, that we should convert from Weis
+   * @param address 
+   * @returns  
+   */
   async getBalance(address: string) {
     console.log(address)
     const balance = await this.web3.eth.getBalance(address);
@@ -36,24 +55,49 @@ export class Web3Service {
     return Web3.utils.fromWei(balance, 'ether');
   }
 
+  /**
+   * Determines whether seeds has
+   * Seeds will be the key for logging into the 
+   * Dapps so we save & remove them in local storage to make easier our logging. 
+   * Also, we encrypt and decrypt them avoiding to be easily hacked making of crypto-js.
+   * @returns  
+   */
   hasSeeds() {
     return window.localStorage.getItem('seeds') != null;
   }
 
+  /**
+   * Determines whether valid seeds is
+   * @param seeds 
+   * @returns  
+   */
   isValidSeeds(seeds: string) {
     return seeds && Mnemonic.isValid(seeds);
   }
 
+  /**
+   * Removes seeds
+   */
   removeSeeds() {
     window.localStorage.removeItem('seeds');
   }
 
+  /**
+   * Encrypts seeds
+   * @param seeds 
+   * @param password 
+   */
   encryptSeeds(seeds: string, password: string) {
     const encryptedSeeds = CryptoJS.AES.encrypt(seeds, password).toString();
     console.log(`Encrypted Seeds: ${encryptedSeeds}`);
     window.localStorage.setItem('seeds', encryptedSeeds);
   }
 
+  /**
+   * Decrypts seeds
+   * @param password 
+   * @returns  
+   */
   decryptSeeds(password: string) {
     const seedsBuffer = CryptoJS.AES.decrypt(window.localStorage.getItem('seeds'), password);
     const seeds = seedsBuffer.toString(CryptoJS.enc.Utf8);
@@ -66,6 +110,11 @@ export class Web3Service {
     }
   }
 
+  /**
+   * Login web3 service
+   * @param { seeds, password } 
+   * @returns  
+   */
   async login({ seeds, password }: any) {
     this.encryptSeeds(seeds, password)
     console.log('seeds')
@@ -89,10 +138,18 @@ export class Web3Service {
     return { ...this.wallet, ...payload };
   }
 
+  /**
+   * Determines whether metamask installed is
+   * @returns  
+   */
   isMetamaskInstalled() {
     return of((window as any).ethereum)
   }
 
+  /**
+   * Login metamask
+   * @returns  
+   */
   async loginMetamask() {
     const eth = (window as any).ethereum;
     try {
